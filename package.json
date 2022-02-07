@@ -10,9 +10,10 @@
   "license": "ISC",
   "dependencies": {
     "lodash": "^4.17.21",
-    "snabbdom": "^3.0.3"
+    "snabbdom": "^3.0.3",
+    "vue": "^2.6.14"
   },
   "devDependencies": {
-    "parcel-bundler": "^1.12.5"
+    "parcel": "^2.0.1"
   }
 }

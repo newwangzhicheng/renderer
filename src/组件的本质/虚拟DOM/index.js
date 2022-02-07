@@ -1,20 +1,15 @@
-import render from './render';
+import { MyComponent } from './render';
+import { init } from 'snabbdom';
 
-class MyComponent {
-  render() {
-    return {
-      tag: 'div',
-    };
-  }
-}
+const patch = init([]);
+const prev = MyComponent({
+  title: '这是旧VNode'
+});
+const next = MyComponent({
+  title: '这是新VNode'
+});
 
-const component = {
-  tag: MyComponent,
-};
-
-const h1 = {
-  tag: 'h1',
-};
-
-render(component, document.querySelector('#app'));
-render(h1, document.querySelector('#app'));
+patch(document.querySelector('#app'), prev);
+setTimeout(() => {
+  patch(prev, next);
+}, 3000);
