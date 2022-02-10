@@ -1,6 +1,8 @@
 import { h, Fragment, Portal } from './h';
 
-const fragment = h(Fragment, null, [
+const fragment = h(Fragment, {
+    target: '#app'
+}, [
     h('td'),
     h('td')
 ]);

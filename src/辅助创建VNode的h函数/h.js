@@ -44,6 +44,7 @@ function h(tag, data = null, children = null) {
             childrenFlags = ChildrenFlags.NO_CHILDREN;
         } else if (children.length === 1) {
             childrenFlags = ChildrenFlags.SINGLE_VNODE;
+            children = children[0];
         } else {
             childrenFlags = ChildrenFlags.KEYED_VNODES;
             children = normalizeVNodes(children);
