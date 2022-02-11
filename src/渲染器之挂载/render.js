@@ -18,7 +18,7 @@ export function render(vnode, container) {
     } else {
         if (vnode) {
             /** 旧vnode存在，新vnode存在，patch */
-            patch(vnode, container);
+            patch(prevVNode, vnode, container);
             container.vnode = vnode;
         } else {
             /** 旧vnode存在，新vnode不存在，移除旧node即可 */
