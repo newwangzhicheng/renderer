@@ -16,7 +16,7 @@ export function mount(vnode, container, isSVG) {
     }
 }
 
-const domPropsER = /\[A-Z]|^(?:value|checked|selected|muted)$/;
+export const domPropsER = /\[A-Z]|^(?:value|checked|selected|muted)$/;
 function mountElement(vnode, container, isSVG) {
     /** 创建Element*/
     isSVG = isSVG || (vnode.flags & VNodeFlags.isSVG);
@@ -141,7 +141,7 @@ function mountFunctionalComponent(vnode, container, isSVG) {
     vnode.el = $vnode.el;
 }
 
-function normailzeClass(className) {
+export function normailzeClass(className) {
     const newClassName = [];
     if (Array.isArray(className)) {
         for (const item of className) {
