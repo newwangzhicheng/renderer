@@ -1,3 +1,4 @@
+import ChildrenFlags from "../先设计VNode吧/VNode种类/ChildrenFlags";
 import VNodeFlags from "../先设计VNode吧/VNode种类/VNodeFlags";
 import { domPropsER, mount, normailzeClass } from "./mount";
 
@@ -74,43 +75,122 @@ function patchElement(prevVNode, nextVNode, container) {
  * @param {any} nextValue 
  */
 function patchData(el, prop, prevValue, nextValue) {
-    if (nextValue) {
-        switch (prop) {
-            case 'style':
-                for (const i in nextValue) {
-                    el.style[prop] = nextValue[i];
+    switch (prop) {
+        case 'style':
+            for (const i in nextValue) {
+                el.style[prop] = nextValue[i];
+            }
+            for (const i in prevValue) {
+                if (!nextValue.hasOwnProperty(i)) {
+                    el.style[i] = '';
                 }
-                for (const i in prevValue) {
-                    if (!nextValue.hasOwnProperty(i)) {
-                        el.style[i] = '';
-                    }
+            }
+            break;
+        case 'class':
+            const className = normailzeClass(nextValue);
+            el.className = className;
+            break;
+        default:
+            if (prop.startsWith('on')) {
+                const eventType = prop.slice(2);
+                if (prevValue) {
+                    el.removeEventListener(eventType, prevValue);
                 }
-                break;
-            case 'class':
-                const className = normailzeClass(nextValue);
-                el.className = className;
-                break;
-            default:
-                if (prop.startsWith('on')) {
-                    const eventType = prop.slice(2);
-                    if (prevValue) {
-                        el.removeEventListener(eventType, prevValue);
-                    }
-                    if (nextValue) {
-                        el.addEventListener(eventType, nextValue);
-                    }
-                } else if (domPropsER.test(prop)) {
-                    el[prop] = nextValue;
-                } else {
-                    el.setAttribute(prop, nextValue);
+                if (nextValue) {
+                    el.addEventListener(eventType, nextValue);
                 }
-                break;
-        }
+            } else if (domPropsER.test(prop)) {
+                el[prop] = nextValue;
+            } else {
+                el.setAttribute(prop, nextValue);
+            }
+            break;
     }
 }
 
-patchChildren(el, prevChildrenFlags, nextChildrenFlags, prevChildren, nextChildren) {
-    if () {
-        replaceVNode()
+/**
+ * patch子元素，有3*3共9种可能
+ * @param {HTMLElement} container 
+ * @param {number} prevChildrenFlags 
+ * @param {number} nextChildrenFlags 
+ * @param {VNode} prevChildren 
+ * @param {VNode} nextChildren 
+ */
+function patchChildren(container, prevChildrenFlags, nextChildrenFlags, prevChildren, nextChildren) {
+    switch (prevChildrenFlags) {
+        /** 没有子节点 */
+        case ChildrenFlags.NO_CHILDREN:
+            switch (nextChildrenFlags) {
+                /** 没有子节点 */
+                case ChildrenFlags.NO_CHILDREN:
+                    /** 什么也不做 */
+                    break;
+                /** 有单个节点 */
+                case ChildrenFlags.SINGLE_VNODE:
+                    /** 直接挂载新节点 */
+                    mount(nextChildren, container);
+                    break;
+                /** 有多个节点 */
+                default:
+                    /** 循环遍历挂载 */
+                    for (const child of nextChildren) {
+                        mount(child, container);
+                    }
+                    break;
+            }
+            break;
+        /** 单个子节点 */
+        case ChildrenFlags.SINGLE_VNODE:
+            switch (nextChildrenFlags) {
+                /** 没有子节点 */
+                case ChildrenFlags.NO_CHILDREN:
+                    /** 移除旧的VNode */
+                    container.removeChild(prevVNode.el);
+                    break;
+                /** 有单个节点 */
+                case ChildrenFlags.SINGLE_VNODE:
+                    /** patch新旧节点 */
+                    patch(prevChildren, nextChildren, container);
+                    break;
+                /** 有多个节点 */
+                default:
+                    /** 移除旧的VNode, 循环遍历挂载 */
+                    container.removeChild(prevVNode.el);
+                    for (const child of nextChildren) {
+                        mount(child, el);
+                    }
+                    break;
+            }
+            break;
+        /** 多个节点 */
+        default:
+            switch (nextChildrenFlags) {
+                /** 没有子节点 */
+                case ChildrenFlags.NO_CHILDREN:
+                    /** 循环移除旧的VNode */
+                    for (const child of prevChildren) {
+                        container.removeChild(child.el);
+                    }
+                    break;
+                /** 有单个节点 */
+                case ChildrenFlags.SINGLE_VNODE:
+                    /** 循环移除旧的VNode，挂载新的VNode */
+                    for (const child of prevChildren) {
+                        container.removeChild(child.el);
+                    }
+                    mount(nextChildren, container);
+                    break;
+                /** 有多个节点 */
+                default:
+                    /** 循环移除旧的VNode，循环挂载新的VNode */
+                    for (const child of prevChildren) {
+                        container.removeChild(child.el);
+                    }
+                    for (const child of nextChildren) {
+                        mount(child, container);
+                    }
+                    break;
+            }
+            break;
     }
 }

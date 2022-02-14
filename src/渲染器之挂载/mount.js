@@ -174,6 +174,8 @@ export function normailzeClass(className) {
             }
         }
         return newClassName.join(' ');
+    } else if (typeof className === 'string') {
+        return className;
     }
-    return className;
+    return '';
 }
