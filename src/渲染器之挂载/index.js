@@ -1,5 +1,5 @@
 import { render } from "./render";
-import { h, Fragment, Portal } from '../辅助创建VNode的h函数/h'
+import { h, Fragment, Portal } from '../辅助创建VNode的h函数/h';
 
 const contaienr = document.querySelector('#app');
 
@@ -113,21 +113,41 @@ const contaienr = document.querySelector('#app');
 // render(statefulComponentVNode, contaienr);
 
 /** 函数式组件 */
-function MyFunctionalComponent() {
-    return h(
-        'div',
-        {
-            style: {
-                height: '100px',
-                width: '100px',
-                background: 'black'
-            }
-        },
-        [
-            h('span', null, '我是组件的标题1......'),
-            h('span', null, '我是组件的标题2......')
-        ]
-    )
-}
-const functionalComponentVNode = h(MyFunctionalComponent);
-render(functionalComponentVNode, contaienr);
+// function MyFunctionalComponent() {
+//     return h(
+//         'div',
+//         {
+//             style: {
+//                 height: '100px',
+//                 width: '100px',
+//                 background: 'red'
+//             }
+//         },
+//         [
+//             h('span', null, '我是组件的标题1......'),
+//             h('span', null, '我是组件的标题2......')
+//         ]
+//     )
+// }
+// const functionalComponentVNode = h(MyFunctionalComponent);
+// render(functionalComponentVNode, contaienr);
+
+const prevVNode = h('div', {
+    style: {
+        width: '100px',
+        height: '100px',
+        backgroundColor: 'yellow'
+    }
+});
+
+const nextVNode = h('div', {
+    style: {
+        width: '100px',
+        height: '100px',
+        backgroundColor: 'black'
+    }
+});
+render(prevVNode, contaienr);
+setTimeout(() => {
+    render(nextVNode, contaienr);
+}, 3000);

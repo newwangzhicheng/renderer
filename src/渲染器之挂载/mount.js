@@ -1,5 +1,6 @@
 import VNodeFlags from '../先设计VNode吧/VNode种类/VNodeFlags';
 import ChildrenFlags from '../先设计VNode吧/VNode种类/ChildrenFlags';
+import { patch } from './patch';
 
 export function mount(vnode, container, isSVG) {
     const { flags } = vnode;
@@ -19,7 +20,7 @@ export function mount(vnode, container, isSVG) {
 export const domPropsER = /\[A-Z]|^(?:value|checked|selected|muted)$/;
 function mountElement(vnode, container, isSVG) {
     /** 创建Element*/
-    isSVG = isSVG || (vnode.flags & VNodeFlags.isSVG);
+    isSVG = isSVG || vnode.flags & VNodeFlags.isSVG;
     const el = isSVG ? document.createElementNS('http://www.w3.org/2000/svg', vnode.tag)
         : document.createElement(vnode.tag);
     vnode.el = el;
@@ -130,15 +131,65 @@ function mountComponent(vnode, container, isSVG) {
 function mountStatefulComponent(vnode, container, isSVG) {
     const instance = new vnode.tag();
     /** 渲染 */
-    instance.$vnode = instance.render();
-    mount(instance.$vnode, container, isSVG);
-    instance.$el = vnode.el = instance.$vnode.el;
+    instance._update = function () {
+        if (!instance._mounted) {
+            /** 第一次渲染 */
+            instance.$vnode = instance.render();
+            /**  挂载 */
+            mount(instance.$vnode, container, isSVG);
+            /** 更新el */
+            instance.$el = (vnode.el = instance.$vnode.el);
+            /** 更新el */
+            instance._mounted = true;
+            /** 调用mounted钩子函数 */
+            instance.mounted && instance.mounted();
+        } else {
+            /** 拿到旧的VNode */
+            const prevVNode = instance.$vnode;
+            /** 拿到新的VNode */
+            const nextVNode = (instance.$vnode = instance.render());
+            /** patch */
+            patch(prevVNode, nextVNode, prevVNode.el.parentNode);
+            /** 更新el */
+            instance.$el = (vnode.el = instance.$vnode.el);
+        }
+    }
+    instance._update();
 }
 
 function mountFunctionalComponent(vnode, container, isSVG) {
-    const $vnode = vnode.tag();
-    mount($vnode, container, isSVG);
-    vnode.el = $vnode.el;
+    /** vnode添加一个handle属性，它是一个对象 */
+    vnode.handle = {
+        /** 存储旧的VNode */
+        prev: null,
+        /** 存储新的VNode */
+        next: vnode,
+        /** 存储挂载容器 */
+        container,
+        update() {
+            if (!vnode.handle.prev) {
+                /** 第一次渲染 */
+                const props = vnode.data;
+                const $vnode = vnode.tag(props);
+                mount($vnode, container, isSVG);
+                vnode.el = $vnode.el;
+            } else {
+                /** 不是第一次渲染 */
+                /** 获取旧的VNode */
+                const prevVNode = vnode.handle.prev;
+                /** 获取新的VNode */
+                const nextVNode = vnode.handle.next;
+                /** 获取组件产出的旧的VNode */
+                const prevTree = prevVNode.children;
+                /** 获取更新后的属性 */
+                const props = nextVNode.data;
+                const nextTree = (nextVNode.children = nextVNode.tag(props));
+                /** 调用patch函数更新 */
+                patch(prevTree, nextTree, vnode.handle.container);
+            }
+        }
+    };
+    vnode.handle.update();
 }
 
 export function normailzeClass(className) {
