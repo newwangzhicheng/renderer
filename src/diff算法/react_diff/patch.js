@@ -1,7 +1,10 @@
-import ChildrenFlags from "../先设计VNode吧/VNode种类/ChildrenFlags";
-import VNodeFlags from "../先设计VNode吧/VNode种类/VNodeFlags";
-import { domPropsER, mount, normailzeClass } from "./mount";
+import ChildrenFlags from "../../先设计VNode吧/VNode种类/ChildrenFlags";
+import VNodeFlags from "../../先设计VNode吧/VNode种类/VNodeFlags";
+import { domPropsER, mount, normailzeClass } from "../../渲染器之挂载/mount";
 
+/**
+ * 本算法采用react diff模式
+ */
 export function patch(prevVNode, nextVNode, container) {
     const prevFlags = prevVNode.flags;
     const nextFlags = nextVNode.flags;
@@ -293,24 +296,51 @@ function patchChildren(prevChildrenFlags, nextChildrenFlags, prevChildren, nextC
                 /** 有多个节点 */
                 default:
                     /**
-                     * 简答的diff
-                     * patch公共的那一部分
-                     * 如果新的children数量比旧的多，添加多余的节点
-                     * 如果新的children数量比旧的少，移除多余的节点
+                     * 记录lastIndex
+                     * 遍历新的children
+                     * 如果当前节点旧的index < lastIndex 则需要移动该节点
+                     * 如果当前节点旧的index > lastIndex 则更新lastIndex
+                     * 多余的节点删除，少的节点插入到合适的位置
                      */
-                    const prevLen = prevChildren.length;
-                    const nextLen = nextChildren.length;
-                    const commonLen = Math.min(prevLen, nextLen);
-                    for (let i = 0; i < commonLen; i++) {
-                        patch(prevChildren[i], nextChildren[i], container);
-                    }
-                    if (nextLen > prevLen) {
-                        for (let i = commonLen; i < nextLen; i++) {
-                            mount(nextChildren[i], container);
+                    let lastIndex = 0;
+                    for (const i in nextChildren) {
+                        let find = false;
+                        for (const j in prevChildren) {
+                            if (nextChildren[i].key === prevChildren[j].key) {
+                                find = true;
+                                if (j < lastIndex) {
+                                    /** 
+                                     * 移动节点
+                                     * 找到新children种需要移动节点a的前一个节点
+                                     * 找到它的后继节点b
+                                     * 将旧children种需要移动的节点插入b之前
+                                     */
+                                    const refNode = nextChildren[i - 1].nextSibling;
+                                    container.insertBefore(prevChildren[i].el, refNode);
+                                    break;
+                                } else {
+                                    /** 更新节点 */
+                                    lastIndex = j;
+                                }
+                                break;
+                            }
                         }
-                    } else if (prevLen > nextLen) {
-                        for (let i = commonLen; i < prevLen; i++) {
-                            container.removeChild(prevChildren[i].el);
+                        if (!find) {
+                            /** 多余的节点应该挂载 */
+                            const refNode = (i - 1 < 0)
+                                ? prevChildren[0].el
+                                : prevChildren[i - 1].el.nextSibling;
+                            mount(nextChildren[i], container, false, refNode);
+                        }
+                    }
+                    /** 移除已经不存在的节点 */
+                    for (const i in prevChildren) {
+                        const prevChild = prevChildren[i];
+                        const has = nextChildren.find((nextChild) =>
+                            nextChild.key === prevChild.key
+                        );
+                        if (!has) {
+                            container.removeChild(prevChild.el);
                         }
                     }
                     break;

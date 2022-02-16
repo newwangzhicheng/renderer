@@ -132,22 +132,229 @@ const contaienr = document.querySelector('#app');
 // const functionalComponentVNode = h(MyFunctionalComponent);
 // render(functionalComponentVNode, contaienr);
 
-const prevVNode = h('div', {
-    style: {
-        width: '100px',
-        height: '100px',
-        backgroundColor: 'yellow'
-    }
-});
+/** 更新VNodeData */
+// const prevVNode = h('div', {
+//     style: {
+//         width: '100px',
+//         height: '100px',
+//         backgroundColor: 'yellow'
+//     }
+// });
 
-const nextVNode = h('div', {
-    style: {
-        width: '100px',
-        height: '100px',
-        backgroundColor: 'black'
-    }
-});
-render(prevVNode, contaienr);
+// const nextVNode = h('div', {
+//     style: {
+//         width: '100px',
+//         height: '100px',
+//         backgroundColor: 'black'
+//     }
+// });
+// render(prevVNode, contaienr);
+// setTimeout(() => {
+//     render(nextVNode, contaienr);
+// }, 3000);
+
+/** patch children 新旧节点的子节点样式不同*/
+// 旧的 VNode
+// const prevVNode = h('div', null,
+//     h('p', {
+//         style: {
+//             height: '100px',
+//             width: '100px',
+//             background: 'red'
+//         }
+//     })
+// )
+
+// // 新的 VNode
+// const nextVNode = h('div', null,
+//     h('p', {
+//         style: {
+//             height: '100px',
+//             width: '100px',
+//             background: 'green'
+//         }
+//     })
+// )
+// render(prevVNode, contaienr);
+// setTimeout(() => {
+//     render(nextVNode, contaienr);
+// }, 3000);
+
+/** 旧节点有子节点 新节点没有子节点 */
+// // 旧的 VNode
+// const prevVNode = h(
+//     'div',
+//     null,
+//     h('p', {
+//         style: {
+//             height: '100px',
+//             width: '100px',
+//             background: 'red'
+//         }
+//     })
+// )
+
+// // 新的 VNode
+// const nextVNode = h('div')
+
+// render(prevVNode, contaienr)
+
+// // 2秒后更新
+// setTimeout(() => {
+//     render(nextVNode, contaienr)
+// }, 3000)
+
+/** 子节点数量不同 */
+// // 旧的 VNode
+// const prevVNode = h('div', null, h('p', null, '只有一个子节点'))
+
+// // 新的 VNode
+// const nextVNode = h('div', null, [
+//     h('p', null, '子节点 1'),
+//     h('p', null, '子节点 2')
+// ])
+
+// render(prevVNode, contaienr)
+
+// // 2秒后更新
+// setTimeout(() => {
+//     render(nextVNode, contaienr)
+// }, 2000)
+
+/** 文本节点 */
+// const prevVNode = h('p', null, '旧文本')
+
+// // 新的 VNode
+// const nextVNode = h('p', null, '新文本')
+
+// render(prevVNode, contaienr)
+
+// // 2秒后更新
+// setTimeout(() => {
+//     render(nextVNode, contaienr)
+// }, 2000)
+
+/** fragment 的 patch */
+// const prevVNode = h(Fragment, null, [
+//     h('p', null, '旧片段子节点 1'),
+//     h('p', null, '旧片段子节点 2')
+// ])
+
+// const nextVNode = h(Fragment, null, [
+//     h('p', null, '新片段子节点 1'),
+//     h('p', null, '新片段子节点 2')
+// ])
+
+// render(prevVNode, contaienr)
+
+// // 2秒后更新
+// setTimeout(() => {
+//     render(nextVNode, contaienr)
+// }, 2000)
+
+/** portal的patch */
+// // 旧的 VNode
+// const prevVNode = h(
+//     Portal,
+//     { target: '#app' },
+//     h('p', null, '旧的 Portal')
+// )
+
+// // 新的 VNode
+// const nextVNode = h(
+//     Portal,
+//     { target: '#box' },
+//     h('p', null, '新的 Portal')
+// )
+
+// render(prevVNode, contaienr)
+
+// // 2秒后更新
+// setTimeout(() => {
+//     render(nextVNode, contaienr)
+// }, 2000)
+
+
+/** 有状态组件的patch */
+// class MyComponent {
+//     // 自身状态 or 本地状态
+//     localState = 'one'
+
+//     // mounted 钩子
+//     mounted() {
+//         // 两秒钟之后修改本地状态的值，并重新调用 _update() 函数更新组件
+//         setTimeout(() => {
+//             this.localState = 'two'
+//             this._update()
+//         }, 2000)
+//     }
+
+//     render() {
+//         return h('div', null, this.localState)
+//     }
+// }
+
+// render(h(MyComponent), contaienr);
+
+/** 有状态组件的更新 */
+// // 组件类
+// class MyComponent {
+//     localState = 'one'
+
+//     mounted() {
+//         setTimeout(() => {
+//             this.localState = 'two'
+//             this._update()
+//         }, 2000)
+//     }
+
+//     render() {
+//         return h('div', null, this.localState)
+//     }
+// }
+// // 有状态组件 VNode
+// const compVNode = h(MyComponent)
+
+// render(compVNode, contaienr)
+
+/** props引起的有状态组件的更新 */
+// class ChildComponent {
+//     render() {
+//         return h('div', null, this.$props.text)
+//     }
+// }
+// // 父组件类
+// class ParentComponent {
+//     localState = 'one'
+
+//     render() {
+//         return h(ChildComponent, {
+//             text: this.localState
+//         })
+//     }
+// }
+// // 有状态组件 VNode
+// const compVNode = h(ParentComponent)
+
+// render(compVNode, contaienr)
+
+/** diff 算法测试， 旧>新 */
+// 旧的 VNode
+const prevVNode = h('div', null, [
+    h('p', null, '旧的子节点1'),
+    h('p', null, '旧的子节点2')
+])
+
+// 新的 VNode
+const nextVNode = h('div', null, [
+    h('p', null, '新的子节点1'),
+    h('p', null, '新的子节点2'),
+    h('p', null, '新的子节点3')
+])
+
+render(prevVNode, document.getElementById('app'))
+
+// 2秒后更新
 setTimeout(() => {
-    render(nextVNode, contaienr);
-}, 3000);
+    render(nextVNode, document.getElementById('app'))
+}, 2000)

@@ -66,7 +66,8 @@ function h(tag, data = null, children = null) {
         children,
         flags,
         childrenFlags,
-        el: null
+        el: null,
+        key: data && data.key ? data.key : null // new for diff
     };
 }
 
