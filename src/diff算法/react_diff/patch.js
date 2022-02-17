@@ -315,7 +315,9 @@ function patchChildren(prevChildrenFlags, nextChildrenFlags, prevChildren, nextC
                                      * 找到它的后继节点b
                                      * 将旧children种需要移动的节点插入b之前
                                      */
-                                    const refNode = nextChildren[i - 1].nextSibling;
+                                    const refNode = nextChildren[i - 1].el.nextSibling;
+                                    console.log('refNode :>> ', refNode);
+                                    console.log('prevChildren :>> ', prevChildren);
                                     container.insertBefore(prevChildren[i].el, refNode);
                                     break;
                                 } else {
