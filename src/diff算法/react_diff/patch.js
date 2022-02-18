@@ -304,10 +304,13 @@ function patchChildren(prevChildrenFlags, nextChildrenFlags, prevChildren, nextC
                      */
                     let lastIndex = 0;
                     for (const i in nextChildren) {
+                        const nextVNode = nextChildren[i];
                         let find = false;
                         for (const j in prevChildren) {
-                            if (nextChildren[i].key === prevChildren[j].key) {
+                            const prevVNode = prevChildren[j];
+                            if (nextVNode.key === prevVNode.key) {
                                 find = true;
+                                patch(prevVNode, nextVNode, container);
                                 if (j < lastIndex) {
                                     /** 
                                      * 移动节点
@@ -316,9 +319,7 @@ function patchChildren(prevChildrenFlags, nextChildrenFlags, prevChildren, nextC
                                      * 将旧children种需要移动的节点插入b之前
                                      */
                                     const refNode = nextChildren[i - 1].el.nextSibling;
-                                    console.log('refNode :>> ', refNode);
-                                    console.log('prevChildren :>> ', prevChildren);
-                                    container.insertBefore(prevChildren[i].el, refNode);
+                                    container.insertBefore(prevVNode.el, refNode);
                                     break;
                                 } else {
                                     /** 更新节点 */
