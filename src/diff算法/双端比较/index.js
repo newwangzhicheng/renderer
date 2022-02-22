@@ -13,7 +13,8 @@ const prevVNode = h('div', null,
 const nextVNode = h('div', null,
     [
         h('div', { key: 3 }, 3),
-        h('div', { key: 1 }, 1)
+        h('div', { key: 1 }, 1),
+        h('div', { key: 2 }, 2)
     ]
 );
 render(prevVNode, container);
