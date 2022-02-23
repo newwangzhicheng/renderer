@@ -277,114 +277,189 @@ function patchChildren(prevChildrenFlags, nextChildrenFlags, prevChildren, nextC
             break;
         /** 多个节点 */
         default:
-            switch (nextChildrenFlags) {
-                /** 没有子节点 */
-                case ChildrenFlags.NO_CHILDREN:
-                    /** 循环移除旧的VNode */
-                    for (const child of prevChildren) {
-                        container.removeChild(child.el);
+            /** inforno */
+            let j = 0;
+            let prevEnd = prevChildren.length - 1;
+            let nextEnd = nextChildren.length - 1;
+            let prevVNode = prevChildren[j];
+            let nextVNode = nextChildren[j];
+            outer: {
+                while (prevVNode.key === nextVNode.key) {
+                    /** 前缀遍历 */
+                    patch(prevVNode, nextVNode, container);
+                    j++;
+                    if (j > prevEnd || j > nextEnd) {
+                        break outer;
                     }
-                    break;
-                /** 有单个节点 */
-                case ChildrenFlags.SINGLE_VNODE:
-                    /** 循环移除旧的VNode，挂载新的VNode */
-                    for (const child of prevChildren) {
-                        container.removeChild(child.el);
+                    prevVNode = prevChildren[j];
+                    nextVNode = nextChildren[j];
+                }
+
+                prevVNode = prevChildren[prevEnd];
+                nextVNode = nextChildren[nextEnd];
+
+                while (prevVNode.key === nextVNode.key) {
+                    /** 后缀遍历 */
+                    patch(prevVNode, nextVNode, container);
+                    prevEnd--;
+                    nextEnd--;
+                    if (j > prevEnd || j > nextEnd) {
+                        break outer;
                     }
-                    mount(nextChildren, container);
-                    break;
-                /** 有多个节点 */
-                default:
-                    /**
-                     * 双端比较
-                     * 
-                     */
-                    let oldStartIdx = 0;
-                    let oldEndIdx = prevChildren.length - 1;
-                    let newStartIdx = 0;
-                    let newEndIdx = nextChildren.length - 1;
+                    prevVNode = prevChildren[prevEnd];
+                    nextVNode = nextChildren[nextEnd];
+                }
+            }
 
-                    let oldStartVNode = prevChildren[oldStartIdx];
-                    let oldEndVNode = prevChildren[oldEndIdx];
-                    let newStartVNode = nextChildren[newStartIdx];
-                    let newEndVNode = nextChildren[newEndIdx];
 
-                    while (oldStartIdx <= oldEndIdx && newStartIdx <= newEndIdx) {
-                        if (!oldStartVNode) {
-                            /**
-                             * 0.1 旧的第一个元素是undefined
-                             */
-                            oldStartVNode = prevChildren[++oldStartIdx];
-                        } else if (!oldEndVNode) {
-                            /**
-                             * 0.2 酒得最后一个元素是undefined
-                             */
-                            oldEndVNode = prevChildren[--oldEndIdx];
-                        } else if (oldStartVNode.key === newStartVNode.key) {
-                            /**
-                             * 1. 旧的第一个元素和新的第一个元素key相同
-                             */
-                            patch(oldStartVNode, newStartVNode, container);
-                            oldStartVNode = prevChildren[++oldStartIdx];
-                            newStartVNode = nextChildren[++newStartIdx];
-                        } else if (oldEndVNode.key === newEndVNode.key) {
-                            /**
-                             * 2. 旧的最后一个元素和新的最后一个元素key相同
-                             */
-                            patch(oldEndVNode, newEndVNode, container);
-                            oldEndVNode = prevChildren[--oldEndIdx];
-                            newEndVNode = nextChildren[--newEndIdx];
-                        } else if (oldStartVNode.key === newEndVNode.key) {
-                            /**
-                             * 3. 旧的第一个元素和新的最后一个元素key相同
-                             */
-                            patch(oldStartVNode, newEndVNode, container);
-                            container.insertBefore(oldStartVNode.el, oldEndVNode.el.nextSibling);
-                            oldStartVNode = prevChildren[++oldStartIdx];
-                            newEndVNode = nextChildren[--newEndIdx];
-                        } else if (oldEndVNode.key === newStartVNode.key) {
-                            /**
-                             * 4. 旧的最后一个元素和新的第一个元素key相同
-                             */
-                            patch(oldEndVNode, newStartVNode, container);
-                            container.insertBefore(oldEndVNode.el, oldStartVNode.el);
-                            oldEndVNode = prevChildren[--oldEndIdx];
-                            newStartVNode = nextChildren[++newStartIdx];
-                        } else {
-                            /**
-                             * 5. 非理想情况，旧的某一个中间元素和新的第一个元素key相同
-                             */
-                            const idxInOld = prevChildren.findIndex(
-                                (node) => node.key === newStartVNode
-                            );
-                            if (idxInOld >= 0) {
-                                /** 将找到的节点移动到oldStartVNode前面，并将prevChildren[idxInOld]设置为undefined */
-                                const vnodeToMove = prevChildren[idxInOld];
-                                patch(vnodeToMove, newStartVNode, container);
-                                container.insertBefore(vnodeToMove.el, oldStartVNode.el);
-                                prevChildren[idxInOld] = undefined;
-                            } else {
-                                /**
-                                 * 全新节点 需要挂载
-                                 */
-                                mount(newStartVNode, container, false, oldStartVNode.el);
+            if (j > prevEnd && j <= nextEnd) {
+                /** 添加多余的节点 */
+                const nextPos = nextEnd + 1;
+                const refEl = nextPos < nextChildren.length
+                    ? nextChildren[nextPos].el
+                    : null;
+                while (j <= nextEnd) {
+                    mount(nextChildren[j++], container, false, refEl);
+                }
+            } else if (j > nextEnd) {
+                /** 移除多余的节点 */
+                while (j <= prevEnd) {
+                    container.removeChild(prevChildren[j++].el);
+                }
+            } else {
+                /** 构造source数组，source节点记录nextChildren节点在prevChildren节点中的位置 */
+                const nextLeft = nextEnd - j + 1;
+                const source = [];
+                for (let i = 0; i < nextLeft; i++) {
+                    source.push(-1);
+                }
+
+                let move = false;
+                let pos = 0;
+                let patchedCount = 0;
+                let prevStart = j;
+                let nextStart = j;
+                /** 构建索引 */
+                const keyIndex = {};
+                for (let i = nextStart; i <= nextEnd; i++) {
+                    keyIndex[nextChildren[i].key] = i;
+                }
+
+                for (let i = prevStart; i <= prevEnd; i++) {
+                    const prevVNode = prevChildren[i];
+                    if (patchedCount < nextLeft) {
+                        const k = keyIndex[prevVNode.key];
+                        if (typeof k !== 'undefined') {
+                            const nextVNode = nextChildren[k];
+                            if (prevVNode.key === nextVNode.key) {
+                                patch(prevVNode, nextVNode, container);
+                                patchedCount++;
+                                source[k - nextStart] = i;
+                                /** 判度是否需要移动 */
+                                if (k < pos) {
+                                    move = true;
+                                } else {
+                                    pos = k;
+                                }
                             }
-                            newStartVNode = nextChildren[++newStartIdx];
+                        } else {
+                            /** 说明旧的节点在新children中已经不存在，可以移除 */
+                            container.removeChild(prevVNode.el)
+                        }
+                    } else {
+                        /** 已更新的新的节点数量超过所有新的节点，说明是多余节点，删除 */
+                        container.removeChild(prevVNode.el);
+                    }
+                }
+
+                if (move) {
+                    /** 移动DOM */
+                    const seq = lis(source);
+                    /** l指向最长递增子序列最后一位 */
+                    let l = seq.length - 1;
+                    /** 从后向前遍历新children中剩余未处理的节点 */
+                    for (let i = nextLeft - 1; i >= 0; i--) {
+                        if (source[i] === -1) {
+                            /** 作为全新节点挂载 */
+                            const pos = i + nextStart;
+                            const nextVNode = nextChildren[pos];
+                            /** 挂载到nextPos的节点的前面 */
+                            const nextPos = pos + 1;
+                            mount(
+                                nextVNode,
+                                container,
+                                false,
+                                nextPos < nextChildren.length
+                                    ? nextChildren[nextPos].el
+                                    : null
+                            );
+                        } else if (i !== seq[l]) {
+                            /** 需要移动的节点 */
+                            const pos = i + nextStart;
+                            const nextVNode = nextChildren[pos];
+                            /** 挂载到nextPos的节点的前面 */
+                            const nextPos = pos + 1;
+                            container.insertBefore(
+                                nextVNode.el,
+                                nextPos < nextChildren.length
+                                    ? nextChildren[nextPos].el
+                                    : null,
+                            );
+                        } else {
+                            /** 在子序列中，不需要移动的节点 */
+                            /** l指向下一个位置 */
+                            l--;
                         }
                     }
-                    if (oldEndIdx < oldStartIdx) {
-                        /** 添加多余的节点 */
-                        for (let i = newStartIdx; i <= newEndIdx; i++) {
-                            mount(nextChildren[i], container, false, oldStartVNode.el);
-                        }
-                    } else if (newEndIdx < newStartIdx) {
-                        /** 移除多余的节点 */
-                        for (let i = oldStartIdx; i <= oldEndIdx; i++) {
-                            container.removeChild(prevChildren[i].el);
-                        }
-                    }
-                    break;
+
+                }
             }
             break;
     }
+}
+
+
+function lis(arr) {
+    const p = arr.slice()
+    const result = [0]
+    let i
+    let j
+    let u
+    let v
+    let c
+    const len = arr.length
+    for (i = 0; i < len; i++) {
+        const arrI = arr[i]
+        if (arrI !== 0) {
+            j = result[result.length - 1]
+            if (arr[j] < arrI) {
+                p[i] = j
+                result.push(i)
+                continue
+            }
+            u = 0
+            v = result.length - 1
+            while (u < v) {
+                c = ((u + v) / 2) | 0
+                if (arr[result[c]] < arrI) {
+                    u = c + 1
+                } else {
+                    v = c
+                }
+            }
+            if (arrI < arr[result[u]]) {
+                if (u > 0) {
+                    p[i] = result[u - 1]
+                }
+                result[u] = i
+            }
+        }
+    }
+    u = result.length
+    v = result[u - 1]
+    while (u-- > 0) {
+        result[u] = v
+        v = p[v]
+    }
+    return result
 }

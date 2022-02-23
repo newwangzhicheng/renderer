@@ -2,10 +2,10 @@ import VNodeFlags from '../先设计VNode吧/VNode种类/VNodeFlags';
 import ChildrenFlags from '../先设计VNode吧/VNode种类/ChildrenFlags';
 import { patch } from './patch';
 
-export function mount(vnode, container, isSVG, refNode) {
+export function mount(vnode, container, isSVG, refEl) {
     const { flags } = vnode;
     if (flags & VNodeFlags.ELEMENT) {
-        mountElement(vnode, container, isSVG);
+        mountElement(vnode, container, isSVG, refEl);
     } else if (flags & VNodeFlags.COMPONENT) {
         mountComponent(vnode, container, isSVG);
     } else if (flags & VNodeFlags.TEXT) {
@@ -18,7 +18,7 @@ export function mount(vnode, container, isSVG, refNode) {
 }
 
 export const domPropsER = /\[A-Z]|^(?:value|checked|selected|muted)$/;
-function mountElement(vnode, container, isSVG, refNode) {
+function mountElement(vnode, container, isSVG, refEl) {
     /** 创建Element*/
     isSVG = isSVG || vnode.flags & VNodeFlags.isSVG;
     const el = isSVG ? document.createElementNS('http://www.w3.org/2000/svg', vnode.tag)
@@ -55,7 +55,7 @@ function mountElement(vnode, container, isSVG, refNode) {
             }
         }
     }
-    refNode ? container.insertBefore(el, refNode) : container.appendChild(el);
+    refEl ? container.insertBefore(el, refEl) : container.appendChild(el);
 
     /** 处理子节点 */
     const { childrenFlags } = vnode;

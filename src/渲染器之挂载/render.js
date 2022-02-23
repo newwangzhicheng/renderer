@@ -2,7 +2,7 @@ import { mount } from './mount';
 // import { patch } from './patch';
 
 // import { patch } from '../diff算法/react_diff/patch';
-import { patch } from '../diff算法/双端比较/patch';
+import { patch } from '../diff算法/inferno/patch';
 
 /**
  * 挂载函数
