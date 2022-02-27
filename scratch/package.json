@@ -1,0 +1,12 @@
+{
+  "name": "scratch",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "devDependencies": {
+    "rollup": "^2.68.0"
+  },
+  "dependencies": {
+    "vue": "^3.2.31"
+  }
+}
